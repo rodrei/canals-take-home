@@ -1,15 +1,4 @@
 module Orders
-  # Asynchronous fulfillment pipeline.
-  #
-  # The external charge MUST NOT happen inside an open DB transaction (holding
-  # row locks across network I/O is a production hazard). So this runs as two
-  # transactions with a compensating action:
-  #   Tx A  - lock inventory rows, verify stock, atomic decrement, set warehouse
-  #   charge - call the provider (no transaction)
-  #   Tx B  - settle: confirm, OR restore stock + mark payment_failed
-  #
-  # Idempotent on Sidekiq retry: skips Tx A if a warehouse is already assigned,
-  # and skips the charge if a succeeded payment already exists.
   class FulfillmentService
     def self.call(order)
       new(order).call
@@ -25,7 +14,7 @@ module Orders
       @order.start_processing! if @order.pending?
 
       reserve_stock! unless @order.warehouse_id.present?
-      return @order if @order.unfulfillable? # reserve_stock! may have marked it
+      return @order if @order.unfulfillable?
 
       settle_payment!
       @order
@@ -108,12 +97,17 @@ module Orders
     end
 
     def geocode
-      Geocoding::GeocodeService.call(
+      Geocoding::GeocodeService.geocode(ship_address)
+    rescue Geocoding::UnsupportedAddressError
+      nil
+    end
+
+    def ship_address
+      Address.new(
+        line1: @order.ship_line1, line2: @order.ship_line2,
         city: @order.ship_city, state: @order.ship_state,
         postal_code: @order.ship_postal_code, country: @order.ship_country
       )
-    rescue Geocoding::UnsupportedAddressError
-      nil
     end
 
     def mark_unfulfillable(reason)

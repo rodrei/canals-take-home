@@ -12,20 +12,32 @@ module Geocoding
       "CO" => [38.9972, -105.5478], "PA" => [40.8781, -77.7996]
     }.freeze
 
-    def self.call(address)
-      new(address).call
+    # Validate that the address is geocodable (a supported US address with a
+    # recognized state). Raises UnsupportedAddressError otherwise.
+    def self.validate(address)
+      new(address).validate
+    end
+
+    # Validate and return deterministic coordinates for the address.
+    def self.geocode(address)
+      new(address).geocode
     end
 
     def initialize(address)
-      @address = address.to_h.with_indifferent_access
+      @address = address
     end
 
-    def call
+    def validate
       raise UnsupportedAddressError, "only US addresses are supported" unless us?
+      raise UnsupportedAddressError, "unrecognized state: #{state}" unless STATE_CENTROIDS.key?(state)
+
+      true
+    end
+
+    def geocode
+      validate
 
       centroid = STATE_CENTROIDS[state]
-      raise UnsupportedAddressError, "unrecognized state: #{state}" unless centroid
-
       lat = centroid[0] + offset(0)
       lng = centroid[1] + offset(1)
       { lat: lat.round(6), lng: lng.round(6) }
@@ -36,15 +48,15 @@ module Geocoding
     attr_reader :address
 
     def us?
-      address[:country].to_s.upcase == "US"
+      address.country.to_s.upcase == "US"
     end
 
     def state
-      address[:state].to_s.upcase
+      address.state.to_s.upcase
     end
 
     def offset(index)
-      digest = Digest::SHA256.hexdigest("#{address[:postal_code]}:#{index}")
+      digest = Digest::SHA256.hexdigest("#{address.postal_code}:#{index}")
       (digest[0, 4].to_i(16) % 1000) / 10_000.0 # 0.0..0.0999
     end
   end

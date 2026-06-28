@@ -12,6 +12,7 @@ module Orders
     def initialize(customer:, params:)
       @customer = customer
       @params = params.to_h.with_indifferent_access
+      @address = Address.from_params(@params[:shipping_address] || {})
     end
 
     def call
@@ -21,9 +22,9 @@ module Orders
 
       order = @customer.orders.build(
         status: :pending,
-        ship_line1: address[:line1], ship_line2: address[:line2],
-        ship_city: address[:city], ship_state: address[:state],
-        ship_postal_code: address[:postal_code], ship_country: address[:country],
+        ship_line1: @address.line1, ship_line2: @address.line2,
+        ship_city: @address.city, ship_state: @address.state,
+        ship_postal_code: @address.postal_code, ship_country: @address.country,
         total_cents: line_items.sum { |li| li[:unit_price_cents] * li[:quantity] },
         currency: "USD",
         payment_method_token: token
@@ -51,17 +52,13 @@ module Orders
       raise ValidationError, e.message
     end
 
-    def address
-      @address ||= (@params[:shipping_address] || {}).with_indifferent_access
-    end
-
     def card_number
       (@params[:payment] || {}).with_indifferent_access[:card_number]
     end
 
     def validate_address!
       # Reuse the geocoder's US/state validation; full coordinates come later.
-      Geocoding::GeocodeService.call(address)
+      Geocoding::GeocodeService.validate(@address)
     rescue Geocoding::UnsupportedAddressError => e
       raise ValidationError, e.message
     end
