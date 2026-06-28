@@ -19,8 +19,7 @@ module Orders
       line_items = build_line_items! # [{ product:, quantity:, unit_price_cents: }]
       token = Payments::TokenizeService.call(card_number)
 
-      order = Order.create!(
-        customer: @customer,
+      order = @customer.orders.build(
         status: :pending,
         ship_line1: address[:line1], ship_line2: address[:line2],
         ship_city: address[:city], ship_state: address[:state],
@@ -31,10 +30,15 @@ module Orders
       )
 
       line_items.each do |li|
-        order.order_items.create!(
+        order.order_items.build(
           product: li[:product], quantity: li[:quantity], unit_price_cents: li[:unit_price_cents]
         )
       end
+
+      # Persist order + items atomically; ActiveRecord validations (Order
+      # presence checks, OrderItem numericality) are enforced here and raise
+      # ActiveRecord::RecordInvalid on failure.
+      order.save!
 
       Orders::FulfillmentJob.perform_later(order.id)
       order
@@ -65,10 +69,8 @@ module Orders
         product = Product.find_by(id: item[:product_id])
         raise ValidationError, "unknown product: #{item[:product_id]}" unless product
 
-        quantity = item[:quantity].to_i
-        raise ValidationError, "quantity must be positive" unless quantity.positive?
-
-        { product: product, quantity: quantity, unit_price_cents: product.price_cents }
+        # Quantity is validated by OrderItem (numericality, greater_than: 0).
+        { product: product, quantity: item[:quantity].to_i, unit_price_cents: product.price_cents }
       end
     end
   end

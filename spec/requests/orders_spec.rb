@@ -45,6 +45,14 @@ RSpec.describe "Orders", type: :request do
       post "/orders", params: body, headers: auth, as: :json
       expect(response).to have_http_status(:unprocessable_content)
     end
+
+    it "returns 422 when a required shipping field is missing" do
+      body = valid_body.deep_dup
+      body[:order][:shipping_address].delete(:city)
+
+      post "/orders", params: body, headers: auth, as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+    end
   end
 
   describe "GET /orders/:id" do

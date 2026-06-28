@@ -46,6 +46,7 @@ class Order < ApplicationRecord
   }
 
   validates :total_cents, numericality: { greater_than_or_equal_to: 0 }
+  validates :ship_city, :ship_country, :ship_line1, :ship_postal_code, :ship_state, presence: true
 
   def start_processing!
     raise InvalidTransition, "expected pending, was #{status}" unless pending?
