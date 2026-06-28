@@ -14,10 +14,13 @@ module Orders
       @params = params.to_h.with_indifferent_access
     end
 
+    # Raises Orders::ValidationError for ANY validation failure (unsupported
+    # address, bad items, declined card tokenization, or ActiveRecord
+    # validations) so callers only need to rescue a single exception type.
     def call
       validate_address!
       line_items = build_line_items! # [{ product:, quantity:, unit_price_cents: }]
-      token = Payments::TokenizeService.call(card_number)
+      token = tokenize_card!
 
       order = @customer.orders.build(
         status: :pending,
@@ -36,15 +39,22 @@ module Orders
       end
 
       # Persist order + items atomically; ActiveRecord validations (Order
-      # presence checks, OrderItem numericality) are enforced here and raise
-      # ActiveRecord::RecordInvalid on failure.
+      # presence checks, OrderItem numericality) are enforced here.
       order.save!
 
       Orders::FulfillmentJob.perform_later(order.id)
       order
+    rescue ActiveRecord::RecordInvalid => e
+      raise ValidationError, e.record.errors.full_messages.to_sentence
     end
 
     private
+
+    def tokenize_card!
+      Payments::TokenizeService.call(card_number)
+    rescue Payments::InvalidCardError => e
+      raise ValidationError, e.message
+    end
 
     def address
       @address ||= (@params[:shipping_address] || {}).with_indifferent_access
@@ -69,7 +79,6 @@ module Orders
         product = Product.find_by(id: item[:product_id])
         raise ValidationError, "unknown product: #{item[:product_id]}" unless product
 
-        # Quantity is validated by OrderItem (numericality, greater_than: 0).
         { product: product, quantity: item[:quantity].to_i, unit_price_cents: product.price_cents }
       end
     end

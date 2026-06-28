@@ -2,7 +2,7 @@ class OrdersController < ApplicationController
   def create
     order = Orders::CreateService.call(customer: current_customer, params: order_params)
     render json: OrderSerializer.call(order), status: :created
-  rescue Orders::ValidationError, Payments::InvalidCardError, ActiveRecord::RecordInvalid => e
+  rescue Orders::ValidationError => e
     render json: { error: e.message }, status: :unprocessable_content
   end
 

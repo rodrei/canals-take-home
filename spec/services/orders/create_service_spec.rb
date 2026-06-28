@@ -45,6 +45,12 @@ RSpec.describe Orders::CreateService do
   it "rejects an invalid card" do
     bad = params(payment: { card_number: "1234567812345678" })
     expect { described_class.call(customer: customer, params: bad) }
-      .to raise_error(Payments::InvalidCardError)
+      .to raise_error(Orders::ValidationError)
+  end
+
+  it "raises ValidationError (not RecordInvalid) when a required field is missing" do
+    bad = params(shipping_address: { line1: "1", state: "NY", postal_code: "10001", country: "US" }) # no city
+    expect { described_class.call(customer: customer, params: bad) }
+      .to raise_error(Orders::ValidationError)
   end
 end
