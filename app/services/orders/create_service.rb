@@ -14,9 +14,6 @@ module Orders
       @params = params.to_h.with_indifferent_access
     end
 
-    # Raises Orders::ValidationError for ANY validation failure (unsupported
-    # address, bad items, declined card tokenization, or ActiveRecord
-    # validations) so callers only need to rescue a single exception type.
     def call
       validate_address!
       line_items = build_line_items! # [{ product:, quantity:, unit_price_cents: }]
@@ -38,8 +35,6 @@ module Orders
         )
       end
 
-      # Persist order + items atomically; ActiveRecord validations (Order
-      # presence checks, OrderItem numericality) are enforced here.
       order.save!
 
       Orders::FulfillmentJob.perform_later(order.id)
