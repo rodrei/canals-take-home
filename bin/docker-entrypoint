@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -e
+
+# Wait for Postgres to accept connections before doing anything DB-related.
+until pg_isready -h db -U postgres >/dev/null 2>&1; do
+  echo "Waiting for postgres..."
+  sleep 1
+done
+
+# When booting the web server, prepare and seed the database.
+if [ "${1}" = "bundle" ] && [ "${2}" = "exec" ] && [ "${3}" = "rails" ] && [ "${4}" = "server" ]; then
+  bundle exec rails db:prepare
+  bundle exec rails db:seed
+fi
+
+exec "$@"

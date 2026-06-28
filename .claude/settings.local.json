@@ -2,7 +2,31 @@
   "permissions": {
     "allow": [
       "Bash(git add *)",
-      "Bash(git -c user.name=Claude -c user.email=noreply@anthropic.com commit -q -m 'Add order management API implementation plan *)"
+      "Bash(git -c user.name=Claude -c user.email=noreply@anthropic.com commit -q -m 'Add order management API implementation plan *)",
+      "Bash(git checkout *)",
+      "Bash(ruby -v)",
+      "Bash(echo \"ruby: $\\(ruby -v 2>&1\\)\")",
+      "Bash(rails -v)",
+      "Bash(echo \"rails: $\\(rails -v 2>&1\\)\")",
+      "Bash(bundle -v)",
+      "Bash(rbenv local *)",
+      "Bash(echo \"ruby now: $\\(ruby -v\\)\")",
+      "Bash(echo \"rails: $\\(rails -v\\)\")",
+      "Bash(gem install *)",
+      "Bash(rails new *)",
+      "Bash(bundle install *)",
+      "Bash(bundle exec *)",
+      "Bash(docker compose *)",
+      "Bash(pg_isready)",
+      "Bash(brew services *)",
+      "Bash(open -a Docker)",
+      "Bash(docker exec *)",
+      "Bash(break)",
+      "Bash(export DATABASE_URL=postgres://postgres:postgres@localhost:5432/canals_development)",
+      "Bash(export TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/canals_test)",
+      "Bash(export REDIS_URL=redis://localhost:6379/0)",
+      "Bash(git check-ignore *)",
+      "Bash(git -c user.name=Claude -c user.email=noreply@anthropic.com commit -q -m 'chore: scaffold Rails API app with Docker, Sidekiq, and RSpec *)"
     ]
   }
 }
