@@ -1,3 +1,36 @@
+# == Schema Information
+#
+# Table name: orders
+#
+#  id                   :bigint           not null, primary key
+#  currency             :string
+#  failure_reason       :string
+#  payment_method_token :string
+#  ship_city            :string
+#  ship_country         :string
+#  ship_line1           :string
+#  ship_line2           :string
+#  ship_postal_code     :string
+#  ship_state           :string
+#  shipping_lat         :decimal(10, 6)
+#  shipping_lng         :decimal(10, 6)
+#  status               :integer          default("pending"), not null
+#  total_cents          :integer
+#  created_at           :datetime         not null
+#  updated_at           :datetime         not null
+#  customer_id          :bigint           not null
+#  warehouse_id         :bigint
+#
+# Indexes
+#
+#  index_orders_on_customer_id   (customer_id)
+#  index_orders_on_warehouse_id  (warehouse_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (customer_id => customers.id)
+#  fk_rails_...  (warehouse_id => warehouses.id)
+#
 class Order < ApplicationRecord
   belongs_to :customer
   belongs_to :warehouse, optional: true

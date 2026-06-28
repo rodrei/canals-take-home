@@ -52,3 +52,9 @@ group :development, :test do
   # Load ENV from .env for host-side commands (Docker injects env directly)
   gem "dotenv-rails"
 end
+
+group :development do
+  # Annotate models with their schema as a comment block. (annotaterb is the
+  # maintained fork; the classic `annotate` gem caps at activerecord < 8.)
+  gem "annotaterb"
+end
