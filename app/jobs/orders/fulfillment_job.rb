@@ -3,7 +3,8 @@ module Orders
     queue_as :default
 
     def perform(order_id)
-      # Real body added in Task 10.
+      order = Order.find(order_id)
+      Orders::FulfillmentService.call(order)
     end
   end
 end
