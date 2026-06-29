@@ -13,6 +13,7 @@ module Orders
       @customer = customer
       @params = params.to_h.with_indifferent_access
       @address = Address.from_params(@params[:shipping_address] || {})
+      @card_number = (@params[:payment] || {}).with_indifferent_access[:card_number]
     end
 
     def call
@@ -47,13 +48,9 @@ module Orders
     private
 
     def tokenize_card!
-      Payments::TokenizeService.call(card_number)
+      Payments::TokenizeService.call(@card_number)
     rescue Payments::InvalidCardError => e
       raise ValidationError, e.message
-    end
-
-    def card_number
-      (@params[:payment] || {}).with_indifferent_access[:card_number]
     end
 
     def validate_address!
