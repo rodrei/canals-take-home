@@ -1,5 +1,7 @@
 # Canals Order Management API
 
+Repository: [https://github.com/rodrei/order-processor](https://github.com/rodrei/order-processor)
+
 A minimal, production-rigor order management service. `POST /orders` accepts an
 order, fulfills it from the single closest warehouse that stocks every item, and
 charges the customer via a mocked payment provider. Validation is synchronous;
@@ -7,7 +9,6 @@ warehouse selection and the charge happen asynchronously via Sidekiq.
 
 ## Run
 
-    cp .env.example .env   # (a working .env is already committed)
     docker compose up
 
 The API boots on http://localhost:3000. On first boot the entrypoint waits for
