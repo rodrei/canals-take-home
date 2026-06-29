@@ -52,6 +52,9 @@ Order lifecycle: `pending → processing → { confirmed | unfulfillable | payme
 Full design and rationale: `docs/superpowers/specs/2026-06-28-order-management-api-design.md`.
 Implementation plan: `docs/superpowers/plans/2026-06-28-order-management-api.md`.
 
+Entity-relationship diagram: [`docs/erd.png`](docs/erd.png) (Mermaid source:
+[`docs/erd.mmd`](docs/erd.mmd)), generated with `rails-erd`.
+
 ## Notable design decisions / tradeoffs
 
 - **Sync vs async split.** The request validates the payload, confirms a

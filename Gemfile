@@ -57,4 +57,10 @@ group :development do
   # Annotate models with their schema as a comment block. (annotaterb is the
   # maintained fork; the classic `annotate` gem caps at activerecord < 8.)
   gem "annotaterb"
+
+  # Generate an entity-relationship diagram from the models. ruby-graphviz
+  # enables rendered (PNG/PDF) output via the Graphviz `dot` binary; without it
+  # rails-erd falls back to Mermaid (.mmd) text output.
+  gem "rails-erd", require: false
+  gem "ruby-graphviz", require: false
 end
