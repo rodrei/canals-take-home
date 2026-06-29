@@ -33,7 +33,7 @@ module Orders
       )
       return mark_unfulfillable("no warehouse can fulfill this order") if warehouse.nil?
 
-      Order.transaction do
+      reserved = Order.transaction do
         inventories = Inventory
           .where(warehouse_id: warehouse.id, product_id: order_items.map(&:product_id))
           .lock("FOR UPDATE")
@@ -52,10 +52,12 @@ module Orders
         end
 
         @order.update!(shipping_lat: coords[:lat], shipping_lng: coords[:lng], warehouse_id: warehouse.id)
+        true
       end
 
-      # If the transaction rolled back, warehouse_id is still nil -> unfulfillable.
-      mark_unfulfillable("warehouse stock changed before reservation") if @order.warehouse_id.blank?
+      # A rolled-back transaction returns nil (ActiveRecord::Rollback); unexpected
+      # errors propagate instead, leaving the order to retry.
+      mark_unfulfillable("warehouse stock changed before reservation") unless reserved
     end
 
     def settle_payment!
