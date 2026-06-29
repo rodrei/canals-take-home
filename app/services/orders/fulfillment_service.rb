@@ -65,7 +65,7 @@ module Orders
 
       idempotency_key = "order-#{@order.id}-charge"
       begin
-        provider_id = Payments::ChargeService.call(
+        payment_id = Payments::ChargeService.call(
           token: @order.payment_method_token,
           amount_cents: @order.total_cents,
           idempotency_key: idempotency_key,
@@ -74,7 +74,7 @@ module Orders
         Order.transaction do
           @order.payments.create!(
             amount_cents: @order.total_cents, currency: @order.currency,
-            status: :succeeded, provider_payment_id: provider_id, idempotency_key: idempotency_key
+            status: :succeeded, provider_payment_id: payment_id, idempotency_key: idempotency_key
           )
           @order.mark_confirmed!(warehouse: @order.warehouse)
         end
@@ -99,17 +99,14 @@ module Orders
     end
 
     def geocode
-      Geocoding::GeocodeService.geocode(ship_address)
-    rescue Geocoding::UnsupportedAddressError
-      nil
-    end
-
-    def ship_address
-      Address.new(
+      address = Address.new(
         line1: @order.ship_line1, line2: @order.ship_line2,
         city: @order.ship_city, state: @order.ship_state,
         postal_code: @order.ship_postal_code, country: @order.ship_country
       )
+      Geocoding::GeocodeService.geocode(address)
+    rescue Geocoding::UnsupportedAddressError
+      nil
     end
 
     def mark_unfulfillable(reason)
