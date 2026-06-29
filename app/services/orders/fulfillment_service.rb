@@ -26,8 +26,8 @@ module Orders
       coords = geocode
       return mark_unfulfillable("unsupported shipping address") if coords.nil?
 
-      item_quantities = @order.order_items.pluck(:product_id, :quantity).to_h
-      eligible = WarehouseSelection::EligibleQuery.call(item_quantities)
+      order_items = @order.order_items.to_a
+      eligible = WarehouseSelection::EligibleQuery.call(order_items)
       warehouse = WarehouseSelection::SelectService.call(
         warehouses: eligible, lat: coords[:lat], lng: coords[:lng]
       )
@@ -35,20 +35,20 @@ module Orders
 
       Order.transaction do
         inventories = Inventory
-          .where(warehouse_id: warehouse.id, product_id: item_quantities.keys)
+          .where(warehouse_id: warehouse.id, product_id: order_items.map(&:product_id))
           .lock("FOR UPDATE")
           .index_by(&:product_id)
 
-        item_quantities.each do |product_id, quantity|
-          inv = inventories[product_id]
-          if inv.nil? || inv.quantity < quantity
+        order_items.each do |item|
+          inv = inventories[item.product_id]
+          if inv.nil? || inv.quantity < item.quantity
             raise ActiveRecord::Rollback, :insufficient
           end
         end
 
-        item_quantities.each do |product_id, quantity|
-          inv = inventories[product_id]
-          inv.update!(quantity: inv.quantity - quantity)
+        order_items.each do |item|
+          inv = inventories[item.product_id]
+          inv.update!(quantity: inv.quantity - item.quantity)
         end
 
         @order.update!(shipping_lat: coords[:lat], shipping_lng: coords[:lng], warehouse_id: warehouse.id)
