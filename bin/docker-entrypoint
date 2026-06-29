@@ -7,10 +7,13 @@ until pg_isready -h db -U postgres >/dev/null 2>&1; do
   sleep 1
 done
 
-# When booting the web server, prepare and seed the database.
+# When booting the web server, prepare and seed the development database, and
+# prepare the test database so `docker compose run --rm web bundle exec rspec`
+# works on a fresh checkout.
 if [ "${1}" = "bundle" ] && [ "${2}" = "exec" ] && [ "${3}" = "rails" ] && [ "${4}" = "server" ]; then
   bundle exec rails db:prepare
   bundle exec rails db:seed
+  RAILS_ENV=test bundle exec rails db:prepare
 fi
 
 exec "$@"
