@@ -10,10 +10,11 @@ module Orders
     end
 
     def initialize(customer:, params:)
+      params = params.to_h.with_indifferent_access
       @customer = customer
-      @params = params.to_h.with_indifferent_access
-      @address = Address.from_params(@params[:shipping_address] || {})
-      @card_number = (@params[:payment] || {}).with_indifferent_access[:card_number]
+      @items = params[:items]
+      @address = Address.from_params(params[:shipping_address] || {})
+      @card_number = (params[:payment] || {}).with_indifferent_access[:card_number]
     end
 
     def call
@@ -61,10 +62,9 @@ module Orders
     end
 
     def build_line_items!
-      items = @params[:items]
-      raise ValidationError, "items required" if items.blank?
+      raise ValidationError, "items required" if @items.blank?
 
-      items.map do |item|
+      @items.map do |item|
         product = Product.find_by(id: item[:product_id])
         raise ValidationError, "unknown product: #{item[:product_id]}" unless product
 
